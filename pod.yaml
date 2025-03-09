@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+  namespace: homework
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 8000
+    command: ["/bin/bash", "-c"]
+    args:
+      - |
+        cat <<EOF > /etc/nginx/nginx.conf
+        events {}
+        http {
+          server {
+            listen 8000;
+            root /homework;
+            index index.html;
+          }
+        }
+        EOF
+        nginx -g 'daemon off;'
+    lifecycle:
+        preStop:
+          exec:
+            command: ["rm", "/homework/index.html"]
+    volumeMounts:
+    - name: shared-volume
+      mountPath: /homework
+  initContainers:
+  - name: init
+    image: busybox:1.28
+    command:
+    - wget
+    - "-O"
+    - "/init/index.html"
+    - http://otus.ru/
+    volumeMounts:
+    - name: shared-volume
+      mountPath: "/init"
+  dnsPolicy: Default
+  volumes:
+  - name: shared-volume
+    emptyDir: {}
